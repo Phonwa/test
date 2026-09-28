@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Coach">
+  <meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16181c" media="(prefers-color-scheme: dark)">
+  <title>Life Coach</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Shown until the access token is entered once on this device -->
+  <section id="login" class="login" hidden>
+    <h1>Life Coach</h1>
+    <p>Enter the access token printed when the server started.</p>
+    <form id="login-form">
+      <input id="login-token" type="password" autocomplete="current-password" placeholder="Access token" required>
+      <button type="submit">Continue</button>
+    </form>
+    <p id="login-error" class="error" hidden></p>
+  </section>
+
+  <main id="app" hidden>
+    <header class="top">
+      <div>
+        <h1 id="greeting">Life Coach</h1>
+        <p id="status-line" class="muted"></p>
+      </div>
+    </header>
+
+    <!-- Coach -->
+    <section id="tab-coach" class="tab">
+      <div id="messages" class="messages" aria-live="polite"></div>
+      <div class="chips" id="chips">
+        <button type="button" data-prompt="How am I doing today?">How am I doing today?</button>
+        <button type="button" data-prompt="I keep opening Rednote without thinking. Help me figure out why.">Why do I keep scrolling?</button>
+        <button type="button" data-prompt="Help me plan the rest of my day with less phone time.">Plan my day</button>
+        <button type="button" data-prompt="Give me an honest review of my week.">Weekly review</button>
+      </div>
+      <form id="chat-form" class="composer">
+        <textarea id="chat-input" rows="1" placeholder="Talk to your coach…" autocomplete="off"></textarea>
+        <button type="submit" id="send" aria-label="Send">Send</button>
+      </form>
+    </section>
+
+    <!-- Today -->
+    <section id="tab-today" class="tab" hidden>
+      <div class="tiles">
+        <div class="tile"><span class="tile-label">Entertainment today</span><span class="tile-value" id="tile-distraction">0</span><span class="tile-unit">min</span></div>
+        <div class="tile"><span class="tile-label">Productive today</span><span class="tile-value" id="tile-productive">0</span><span class="tile-unit">min</span></div>
+        <div class="tile"><span class="tile-label">After bedtime</span><span class="tile-value" id="tile-late">0</span><span class="tile-unit">min</span></div>
+      </div>
+      <div id="now-card" class="card now" hidden></div>
+
+      <div class="card">
+        <h2>Apps today</h2>
+        <p class="muted small">Minutes per app. The tick shows your daily limit.</p>
+        <div id="apps-chart" class="bars"></div>
+      </div>
+
+      <div class="card">
+        <h2>Entertainment, last 7 days</h2>
+        <div id="week-chart" class="week"></div>
+      </div>
+
+      <div class="card">
+        <h2>Today's sessions</h2>
+        <ul id="sessions" class="sessions"></ul>
+      </div>
+    </section>
+
+    <!-- Setup -->
+    <section id="tab-setup" class="tab" hidden>
+      <form id="settings-form" class="card settings">
+        <h2>About you</h2>
+        <label>Name <input name="name" autocomplete="given-name"></label>
+        <label>What do you want more time for?
+          <textarea name="goals" rows="3" placeholder="e.g. Pass my IELTS exam, read 2 books a month, sleep before midnight"></textarea>
+        </label>
+        <div class="row">
+          <label>Bedtime <input name="bedtime" type="time"></label>
+          <label>Time zone <input name="timezone"></label>
+        </div>
+        <div class="row">
+          <label>Coach style
+            <select name="coachStyle">
+              <option>warm but honest</option>
+              <option>gentle and encouraging</option>
+              <option>direct, no-nonsense</option>
+              <option>playful and funny</option>
+            </select>
+          </label>
+          <label>Notification language
+            <select name="language">
+              <option>English</option>
+              <option value="Chinese (中文)">中文</option>
+            </select>
+          </label>
+        </div>
+        <label>Notifications when you open an app
+          <select name="nudgeMode">
+            <option value="always">Every time I open one</option>
+            <option value="smart">Only when over limit, bingeing or up late</option>
+          </select>
+        </label>
+
+        <h2>Apps</h2>
+        <p class="muted small">Names must match the app names you use in the Shortcuts automations. A limit of 0 means no limit.</p>
+        <div id="apps-editor" class="apps-editor"></div>
+        <button type="button" id="add-app" class="secondary">Add app</button>
+
+        <button type="submit">Save</button>
+        <p id="settings-saved" class="muted small" hidden>Saved.</p>
+      </form>
+
+      <div class="card">
+        <h2>Connect your iPhone</h2>
+        <p>The coach learns what you open through <b>Shortcuts → Automation</b>. Make two automations for each app you want tracked.</p>
+        <ol class="steps">
+          <li>Open the <b>Shortcuts</b> app → <b>Automation</b> → <b>+</b> → <b>App</b>.</li>
+          <li>Choose the app (e.g. <b>Rednote</b>), tick <b>Is Opened</b> only, and select <b>Run Immediately</b>. Tap <b>Next</b> → <b>New Blank Automation</b>.</li>
+          <li>Add <b>Get Contents of URL</b>. Set the URL to:
+            <code class="copy" id="url-open"></code>
+            Tap <b>Show More</b> and set <b>Method</b> to <b>POST</b>.</li>
+          <li>Add <b>If</b> → <i>Contents of URL</i> <b>has any value</b>, and put <b>Show Notification</b> with <i>Contents of URL</i> inside it.</li>
+          <li>Repeat with <b>Is Closed</b> and this URL (no notification needed):
+            <code class="copy" id="url-close"></code></li>
+        </ol>
+        <p class="muted small">Tap a URL to copy it. Change <code>app=Rednote</code> to the app's name for Douyin, Bilibili, YouTube and so on. The URL includes your access token, so keep it private.</p>
+        <p class="muted small">Tip: set up <b>Focus</b> or <b>Screen Time</b> limits too. The coach helps you reflect, but it can't lock apps.</p>
+      </div>
+
+      <div class="card">
+        <h2>Your data</h2>
+        <p class="muted small">Everything is stored on your own server. Only the usage summary and your messages are sent to Claude to write replies.</p>
+        <div class="row">
+          <button type="button" id="export" class="secondary">Download data</button>
+          <button type="button" id="clear-chat" class="secondary">Clear chat</button>
+          <button type="button" id="logout" class="secondary">Log out</button>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="coach" aria-selected="true">Coach</button>
+      <button type="button" role="tab" data-tab="today" aria-selected="false">Today</button>
+      <button type="button" role="tab" data-tab="setup" aria-selected="false">Setup</button>
+    </nav>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

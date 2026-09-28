@@ -1,0 +1,17 @@
+{
+  "name": "ai-life-coach",
+  "version": "0.1.0",
+  "description": "An AI life coach that watches your iPhone app usage (via iOS Shortcuts) and helps you spend time on what matters.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0"
+  }
+}
